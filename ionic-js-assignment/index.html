@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css"/>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.js"></script>
+</head>
+<body>
+<ion-app>
+    <ion-header>
+        <ion-toolbar>
+            <ion-title>My App</ion-title>
+        </ion-toolbar>
+    </ion-header>
+
+    <ion-content>
+        <ion-grid>
+            <ion-row>
+                <ion-col size="12" offset="0" size-md="6" offset-md="3">
+                    <ion-card>
+                        <ion-item>
+                            <ion-label position="floating">Course Name</ion-label>
+                            <ion-input type="text" id="name"></ion-input>
+                        </ion-item>
+                        <ion-item>
+                            <ion-label position="floating">Course Rating (1-5)</ion-label>
+                            <ion-input type="number" min="1" max="5" id="rate"></ion-input>
+                        </ion-item>
+                        <ion-button (click)="openModal()" id="btn-add">Add</ion-button>
+                    </ion-card>
+                </ion-col>
+            </ion-row>
+            <ion-row>
+                <ion-col size="12" offset="0" size-md="6" offset-md="3">
+                    <ion-list id="expenses-list">
+                    </ion-list>
+                </ion-col>
+            </ion-row>
+        </ion-grid>
+    </ion-content>
+</ion-app>
+<script src="app.js"></script>
+</body>
+</html>
