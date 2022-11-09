@@ -1,0 +1,25 @@
+<ion-item [routerLink]="['/','places','offers',offer.id]">
+
+  <ion-thumbnail slot="start">
+    <ion-img [src]="offer.imageUrl"></ion-img>
+  </ion-thumbnail>
+  <ion-label>
+    <h2>{{offer.title}}</h2>
+    <div class="offer-details">
+      <ion-icon name="calendar"></ion-icon>
+      <ion-text color="primary" >{{ getDummyDate() | date}}</ion-text>
+      <span> to </span>
+      <ion-icon name="calendar"></ion-icon>
+      <ion-text color="primary">{{ getDummyDate() | date}}</ion-text>
+    </div>
+<!--    <h3>
+      <del>{{offer.price|currency}}</del>
+      / Night
+    </h3>
+    <p>{{offer.description}}</p>-->
+  </ion-label>
+<!--  <ion-label slot="end">-->
+<!--    <h2>{{offer.offerPrice|currency}}</h2>-->
+<!--    <p>Offer</p>-->
+<!--  </ion-label>-->
+</ion-item>
