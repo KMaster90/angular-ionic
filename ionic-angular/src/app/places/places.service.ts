@@ -1,48 +1,111 @@
 import {Injectable} from '@angular/core';
-import {Place} from './place.model';
+import {Place, PlaceFromApi, PlaceToPost} from './place.model';
+import {AuthService} from '../auth/auth.service';
+import {BehaviorSubject, of} from 'rxjs';
+import {map, switchMap, take, tap} from 'rxjs/operators';
+import {HttpClient} from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PlacesService {
-  private _places: Place[] = [
-    new Place(
-      'p1',
-      'Manhattan Mansion',
-      'In the heart of New York City.',
-      'https://images.unsplash.com/photo-1543158266-0066955047b1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2340&q=80',
-      149.99,
-      new Date('2021-01-01'),
-      new Date('2022-12-31'),
-      42.99,
-    ),
-    new Place(
-      'p2',
-      'L\'Amour Toujours',
-      'A romantic place in Paris!',
-      'https://images.unsplash.com/photo-1612821058477-8b39080e8dee?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1935&q=80',
-      189.99,
-      new Date(),
-      new Date(),
-    ),
-    new Place(
-      'p3',
-      'The Foggy Palace',
-      'Not your average city trip!',
-      'https://images.unsplash.com/photo-1579988936083-16d8215bb12e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2148&q=80',
-      99.99,
-      new Date(),
-      new Date(),
-      29.99,
-    )
-  ];
-  constructor() { }
+  private _places = new BehaviorSubject<Place[]>([]);
+  constructor(private authService: AuthService, private http: HttpClient) {
+  }
+
   get places() {
     const {_places} = this;
-    return [..._places];
+    return _places.asObservable();
+  }
+
+  fetchPlaces() {
+    return this.http.get<{ [key: string]: PlaceFromApi }>('https://ionic-angular-6ec56-default-rtdb.europe-west1.firebasedatabase.app/offered-places.json')
+      .pipe(
+        map(resData => Object.entries(resData).map(([key, value]) => new Place(
+            key,
+            value.title,
+            value.description,
+            value.imageUrl,
+            value.price,
+            new Date(value.availableFrom),
+            new Date(value.availableTo),
+            value.userId,
+            value.location,
+            value.offerPrice,
+          ))
+        ),
+        // eslint-disable-next-line no-underscore-dangle
+        tap(places => this._places.next(places))
+      );
   }
 
   getPlace(placeId: string) {
-    return {...this.places.find(p => p.id === placeId)};
+    return this.http.get<PlaceFromApi>(`https://ionic-angular-6ec56-default-rtdb.europe-west1.firebasedatabase.app/offered-places/${placeId}.json`)
+      .pipe(
+        map(place => new Place(place.id, place.title, place.description, place.imageUrl, place.price, new Date(place.availableFrom), new Date(place.availableTo), place.userId, place.location, place.offerPrice))
+      );
+  }
+
+  addPlace(place: PlaceToPost) {
+    const {title, description, price, availableFrom, availableTo, location} = place;
+    const newPlace = new Place(
+      Math.random().toString(),
+      title,
+      description,
+      'https://images.unsplash.com/photo-1543158266-0066955047b1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2340&q=80',
+      price,
+      availableFrom,
+      availableTo,
+      this.authService.userId,
+      location
+    );
+    return this.http.post<PlaceFromApi>('https://ionic-angular-6ec56-default-rtdb.europe-west1.firebasedatabase.app/offered-places.json', {
+      ...newPlace,
+      id: null
+    }).pipe(
+      switchMap(resData => {
+        newPlace.id = resData.title;
+        return this.places;
+      }),
+      take(1),
+      // delay(1000),
+      tap(places => {
+        // eslint-disable-next-line no-underscore-dangle
+        this._places.next(places.concat(newPlace));
+      })
+    );
+  }
+
+  updateOffer(placeId: string, title: string, description: string) {
+    let updatedPlaces: Place[] = [];
+    return this.places.pipe(
+      take(1),
+      switchMap(places => (!places || places.length <= 0) ? this.fetchPlaces() : of(places)),
+      switchMap(places => {
+        const updatedPlaceIndex = places.findIndex(pl => pl.id === placeId);
+        updatedPlaces = [...places];
+        const oldPlace = updatedPlaces[updatedPlaceIndex];
+        updatedPlaces[updatedPlaceIndex] = new Place(
+          oldPlace.id,
+          title,
+          description,
+          oldPlace.imageUrl,
+          oldPlace.price,
+          oldPlace.availableFrom,
+          oldPlace.availableTo,
+          oldPlace.userId,
+          oldPlace.location,
+          oldPlace.offerPrice,
+        );
+        return this.http.put(`https://ionic-angular-6ec56-default-rtdb.europe-west1.firebasedatabase.app/offered-places/${placeId}.json`, {
+          ...updatedPlaces[updatedPlaceIndex], id: null
+        });
+      }),
+      tap(places => {
+
+        // eslint-disable-next-line no-underscore-dangle
+        this._places.next(updatedPlaces);
+      })
+    );
   }
 }

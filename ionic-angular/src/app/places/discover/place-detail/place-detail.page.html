@@ -3,10 +3,44 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/places"></ion-back-button>
     </ion-buttons>
-    <ion-title>Details - {{place.title}}</ion-title>
+    <ion-title>Details - {{place?.title}}</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-<ion-button (click)="onBookPlace()">Book</ion-button>
+  <div *ngIf="isLoading" class="ion-text-center">
+    <ion-spinner color="primary"></ion-spinner>
+  </div>
+  <ion-grid class="ion-no-padding" *ngIf="!isLoading">
+    <ion-row>
+      <ion-col size-sm="6" offset-sm="3" class="ion-no-padding">
+        <ion-img [src]="place.imageUrl"></ion-img>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col size-sm="6" offset-sm="3" class="ion-text-center ion-padding">
+        <p>{{place.description}}</p>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col size-sm="6" offset-sm="3" class="ion-text-center ion-padding ion-text-center">
+        <p>{{place.location?.address}}</p>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col size-sm="6" offset-sm="3" class="ion-text-center ion-no-padding">
+        <ion-img class="location-image ion-no-padding"
+                 [src]="place.location?.staticMapImageUrl"
+                 role="button"
+        (click)="onShowFullMap()"
+        ></ion-img>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="isBookable">
+      <ion-col size-sm="6" offset-sm="3" class="ion-text-center">
+        <ion-button (click)="onBookPlace()">Book</ion-button>
+
+      </ion-col>
+    </ion-row>
+  </ion-grid>
 </ion-content>

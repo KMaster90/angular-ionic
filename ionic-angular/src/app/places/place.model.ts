@@ -1,3 +1,5 @@
+import {PlaceLocation} from './location.model';
+
 export class Place {
   constructor(
     public id: string,
@@ -7,7 +9,12 @@ export class Place {
     public price: number,
     public availableFrom: Date,
     public availableTo: Date,
-    public offerPrice?: number,
-    // public userId: string,
+    public userId: string,
+    public location: PlaceLocation,
+    public offerPrice?: number
   ) {}
 }
+
+export type PlaceToPost = Omit<Place, 'id'|'userId'|'offerPrice'|'imageUrl'>;
+
+export type PlaceFromApi = Omit<Place, 'availableFrom'|'availableTo'> & {availableFrom: string; availableTo: string};

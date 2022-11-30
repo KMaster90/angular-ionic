@@ -1,27 +1,56 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {PlacesService} from '../places.service';
 import {Place} from '../place.model';
-import {SegmentChangeEventDetail} from '@ionic/angular';
+import {Subscription} from 'rxjs';
+import {AuthService} from '../../auth/auth.service';
 
 @Component({
   selector: 'app-discover',
   templateUrl: './discover.page.html',
   styleUrls: ['./discover.page.scss'],
 })
-export class DiscoverPage implements OnInit {
+export class DiscoverPage implements OnInit, OnDestroy {
   loadedPlaces: Place[];
   listedLoadedPlaces: Place[];
-
+  relevantPlaces: Place[];
+  isLoading= false;
+  private filter = 'all';
+  private sub: Subscription;
   constructor(
     private placesService: PlacesService,
-  ) { }
-
-  ngOnInit() {
-    this.loadedPlaces = this.placesService.places;
-    this.listedLoadedPlaces = this.loadedPlaces.slice(1);
+    private authService: AuthService,
+  ) {
   }
 
-  onFilterUpdate($event: CustomEvent<SegmentChangeEventDetail>) {
-    console.log($event.detail);
+  ngOnInit() {
+    this.sub = this.placesService.places.subscribe(places => {
+      this.loadedPlaces = places;
+      this.onFilterUpdate(this.filter);
+      this.relevantPlaces = this.loadedPlaces;
+      this.listedLoadedPlaces = places.slice(1);
+    });
+  }
+
+  ionViewWillEnter(){
+    this.isLoading = true;
+    this.placesService.fetchPlaces().subscribe(()=> this.isLoading = false);
+  }
+
+  onFilterUpdate(filter: string) {
+    const isShown = place => filter === 'all' || place.userId !== this.authService.userId;
+    this.relevantPlaces = this.loadedPlaces.filter(isShown);
+    this.listedLoadedPlaces = this.relevantPlaces.slice(1);
+    this.filter = filter;
+  }
+ /* onFilterUpdate(filter: string) {
+    this.authService.userId.pipe(take(1)).subscribe(userId => {
+      const isShown = place => filter === 'all' || place.userId !== userId;
+      this.relevantPlaces = this.loadedPlaces.filter(isShown);
+      this.filter = filter;
+    });
+  }*/
+
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
   }
 }
