@@ -10,8 +10,8 @@ import {HttpClient} from '@angular/common/http';
 })
 export class PlacesService {
   private _places = new BehaviorSubject<Place[]>([]);
-  constructor(private authService: AuthService, private http: HttpClient) {
-  }
+
+  constructor(private authService: AuthService, private http: HttpClient) {}
 
   get places() {
     const {_places} = this;
@@ -46,18 +46,24 @@ export class PlacesService {
       );
   }
 
-  addPlace(place: PlaceToPost) {
+  uploadImage(image: File | Blob) {
+    const uploadData = new FormData();
+    uploadData.append('image', image);
+    return this.http.post<{ imageUrl: string; imagePath: string }>('https://us-central1-ionic-angular-6ec56.cloudfunctions.net/storeImage', uploadData);
+  }
+
+  addPlace(place: PlaceToPost, imageUrl: string) {
     const {title, description, price, availableFrom, availableTo, location} = place;
     const newPlace = new Place(
       Math.random().toString(),
       title,
       description,
-      'https://images.unsplash.com/photo-1543158266-0066955047b1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2340&q=80',
+      imageUrl,
       price,
       availableFrom,
       availableTo,
       this.authService.userId,
-      location
+      location,
     );
     return this.http.post<PlaceFromApi>('https://ionic-angular-6ec56-default-rtdb.europe-west1.firebasedatabase.app/offered-places.json', {
       ...newPlace,

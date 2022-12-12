@@ -3,7 +3,9 @@ import {ModalController} from '@ionic/angular';
 import {environment} from '../../../environments/environment';
 
 @Component({
-  selector: 'app-map-modal', templateUrl: './map-modal.component.html', styleUrls: ['./map-modal.component.scss'],
+  selector: 'app-map-modal',
+  templateUrl: './map-modal.component.html',
+  styleUrls: ['./map-modal.component.scss'],
 })
 export class MapModalComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('map') mapElementRef: ElementRef;

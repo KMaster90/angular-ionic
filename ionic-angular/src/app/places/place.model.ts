@@ -11,7 +11,8 @@ export class Place {
     public availableTo: Date,
     public userId: string,
     public location: PlaceLocation,
-    public offerPrice?: number
+    public offerPrice?: number,
+    public image?: File|Blob|null,
   ) {}
 }
 
