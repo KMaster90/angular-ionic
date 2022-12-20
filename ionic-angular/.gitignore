@@ -34,4 +34,4 @@ npm-debug.log*
 android
 ios
 ../
-functions/ionic-app.json
+functions/**/*.json
