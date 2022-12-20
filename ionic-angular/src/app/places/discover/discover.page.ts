@@ -3,6 +3,7 @@ import {PlacesService} from '../places.service';
 import {Place} from '../place.model';
 import {Subscription} from 'rxjs';
 import {AuthService} from '../../auth/auth.service';
+import {take} from 'rxjs/operators';
 
 @Component({
   selector: 'app-discover',
@@ -13,9 +14,10 @@ export class DiscoverPage implements OnInit, OnDestroy {
   loadedPlaces: Place[];
   listedLoadedPlaces: Place[];
   relevantPlaces: Place[];
-  isLoading= false;
+  isLoading = false;
   private filter = 'all';
   private sub: Subscription;
+
   constructor(
     private placesService: PlacesService,
     private authService: AuthService,
@@ -31,24 +33,28 @@ export class DiscoverPage implements OnInit, OnDestroy {
     });
   }
 
-  ionViewWillEnter(){
+  ionViewWillEnter() {
     this.isLoading = true;
-    this.placesService.fetchPlaces().subscribe(()=> this.isLoading = false);
+    this.placesService.fetchPlaces().subscribe(() => this.isLoading = false);
   }
 
   onFilterUpdate(filter: string) {
-    const isShown = place => filter === 'all' || place.userId !== this.authService.userId;
-    this.relevantPlaces = this.loadedPlaces.filter(isShown);
-    this.listedLoadedPlaces = this.relevantPlaces.slice(1);
-    this.filter = filter;
+    this.authService.userId.pipe(take(1)).subscribe(
+      userId => {
+        const isShown = place => filter === 'all' || place.userId !== this.authService.userId;
+        this.relevantPlaces = this.loadedPlaces.filter(isShown);
+        this.listedLoadedPlaces = this.relevantPlaces.slice(1);
+        this.filter = filter;
+      });
   }
- /* onFilterUpdate(filter: string) {
-    this.authService.userId.pipe(take(1)).subscribe(userId => {
-      const isShown = place => filter === 'all' || place.userId !== userId;
-      this.relevantPlaces = this.loadedPlaces.filter(isShown);
-      this.filter = filter;
-    });
-  }*/
+
+  /* onFilterUpdate(filter: string) {
+     this.authService.userId.pipe(take(1)).subscribe(userId => {
+       const isShown = place => filter === 'all' || place.userId !== userId;
+       this.relevantPlaces = this.loadedPlaces.filter(isShown);
+       this.filter = filter;
+     });
+   }*/
 
   ngOnDestroy() {
     this.sub?.unsubscribe();

@@ -10,11 +10,12 @@ import {
 import {PlacesService} from '../../places.service';
 import {Place} from '../../place.model';
 import {CreateBookingComponent} from '../../../bookings/create-booking/create-booking.component';
-import {Subscription} from 'rxjs';
+import {forkJoin, of, Subscription} from 'rxjs';
 import {BookingService} from '../../../bookings/booking.service';
 import {BookingModel} from '../../../bookings/booking.model';
 import {AuthService} from '../../../auth/auth.service';
 import {MapModalComponent} from '../../../shared/map-modal/map-modal.component';
+import {switchMap, take} from "rxjs/operators";
 
 export type Mode = 'select' | 'random';
 
@@ -50,9 +51,18 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
         return;
       }
       this.isLoading = true;
-      this.sub = this.placesService.getPlace(paramMap.get('placeId')).subscribe(place => {
+      this.sub = this.authService.userId.pipe(
+        take(1),
+        switchMap(userId => {
+          if(!userId) {
+            throw new Error('Found no user!');
+          }
+          return forkJoin({place: this.placesService.getPlace(paramMap.get('placeId')),userId: of(userId)});
+        })
+      )
+      .subscribe(({place,userId}) => {
           this.place = place;
-          this.isBookable = place.userId !== this.authService.userId;
+          this.isBookable = place.userId !== userId;
           this.isLoading = false;
         },
         error => {

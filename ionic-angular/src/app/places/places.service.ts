@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {Place, PlaceFromApi, PlaceToPost} from './place.model';
 import {AuthService} from '../auth/auth.service';
-import {BehaviorSubject, of} from 'rxjs';
+import {BehaviorSubject, forkJoin, of} from 'rxjs';
 import {map, switchMap, take, tap} from 'rxjs/operators';
 import {HttpClient} from '@angular/common/http';
 
@@ -10,8 +10,9 @@ import {HttpClient} from '@angular/common/http';
 })
 export class PlacesService {
   private _places = new BehaviorSubject<Place[]>([]);
+  constructor(private authService: AuthService, private http: HttpClient) {
+  }
 
-  constructor(private authService: AuthService, private http: HttpClient) {}
 
   get places() {
     const {_places} = this;
@@ -54,32 +55,46 @@ export class PlacesService {
 
   addPlace(place: PlaceToPost, imageUrl: string) {
     const {title, description, price, availableFrom, availableTo, location} = place;
-    const newPlace = new Place(
-      Math.random().toString(),
-      title,
-      description,
-      imageUrl,
-      price,
-      availableFrom,
-      availableTo,
-      this.authService.userId,
-      location,
-    );
-    return this.http.post<PlaceFromApi>('https://ionic-angular-6ec56-default-rtdb.europe-west1.firebasedatabase.app/offered-places.json', {
-      ...newPlace,
-      id: null
-    }).pipe(
-      switchMap(resData => {
-        newPlace.id = resData.title;
-        return this.places;
+    return this.authService.userId.pipe(
+      take(1),
+      switchMap(userId => {
+        if (!userId) {
+          throw new Error('No user found!');
+        }
+        const newPlace = new Place(
+          Math.random().toString(),
+          title,
+          description,
+          imageUrl,
+          price,
+          availableFrom,
+          availableTo,
+          userId,
+          location,
+        );
+        return forkJoin({
+          placePost:this.http.post<PlaceFromApi>('https://ionic-angular-6ec56-default-rtdb.europe-west1.firebasedatabase.app/offered-places.json', {
+            ...newPlace,
+            id: null
+          }),
+          newPlace:of(newPlace)
+        });
+      }),
+      switchMap(({placePost,newPlace}) => {
+        newPlace.id = placePost.title;
+        return forkJoin({
+          places:this.places.pipe(take(1)),
+          newPlace:of(newPlace)
+        });
       }),
       take(1),
       // delay(1000),
-      tap(places => {
+      tap(({places,newPlace}) => {
         // eslint-disable-next-line no-underscore-dangle
         this._places.next(places.concat(newPlace));
       })
     );
+
   }
 
   updateOffer(placeId: string, title: string, description: string) {
